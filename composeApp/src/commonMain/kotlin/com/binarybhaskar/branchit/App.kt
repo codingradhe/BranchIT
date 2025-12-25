@@ -7,13 +7,17 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import com.binarybhaskar.branchit.screens.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBar
 
 enum class MainScreen(val label: String) {
     Home("Home"),
     Connect("Connect"),
     Post("Post"),
-    Updates("Updates"),
-    Profile("Profile")
+    Chat("Chat"),
+    Profile("Profile"),
+    Updates("Updates") // Hidden, only for notification
 }
 
 // Multiplatform device size detection
@@ -24,16 +28,17 @@ private val screenIcons = mapOf(
     MainScreen.Home to "\uD83C\uDFE0",      // House
     MainScreen.Connect to "\uD83D\uDC65",   // People
     MainScreen.Post to "✏️",                // Pencil
-    MainScreen.Updates to "\uD83D\uDCC8",  // Chart
-    MainScreen.Profile to "\uD83D\uDC64"   // Person
+    MainScreen.Chat to "\uD83D\uDCAC",      // Chat bubble
+    MainScreen.Profile to "\uD83D\uDC64"    // Person
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun App() {
     // Simulate login state (replace with persistent logic as needed)
-    var isLoggedIn by remember { mutableStateOf(false) }
-    var selectedScreen by remember { mutableStateOf(MainScreen.Home) }
+    var isLoggedIn by rememberSaveable { mutableStateOf(false) }
+    var selectedScreen by rememberSaveable { mutableStateOf(MainScreen.Home) }
 
     if (!isLoggedIn) {
         LoginScreen(
@@ -42,10 +47,19 @@ fun App() {
         )
     } else {
         val largeScreen = isLargeScreen()
+        val navScreens = listOf(
+            MainScreen.Home,
+            MainScreen.Connect,
+            MainScreen.Post,
+            MainScreen.Chat,
+            MainScreen.Profile
+        )
+        val showUpdates = selectedScreen == MainScreen.Updates
+        val showTopBar = selectedScreen != MainScreen.Updates
         if (largeScreen) {
             Row(Modifier.fillMaxSize()) {
                 NavigationRail {
-                    MainScreen.entries.forEach { screen ->
+                    navScreens.forEach { screen ->
                         NavigationRailItem(
                             selected = selectedScreen == screen,
                             onClick = { selectedScreen = screen },
@@ -54,15 +68,43 @@ fun App() {
                         )
                     }
                 }
-                Box(Modifier.weight(1f)) {
-                    MainScreenContent(selectedScreen)
+                Column(Modifier.weight(1f)) {
+                    if (showTopBar) {
+                        TopAppBar(
+                            title = { Text("BranchIT") },
+                            actions = {
+                                IconButton(onClick = { selectedScreen = MainScreen.Updates }) {
+                                    Text("🔔", fontSize = MaterialTheme.typography.titleLarge.fontSize)
+                                }
+                            }
+                        )
+                    }
+                    Box(Modifier.fillMaxSize()) {
+                        if (showUpdates) {
+                            UpdatesScreen()
+                        } else {
+                            MainScreenContent(selectedScreen)
+                        }
+                    }
                 }
             }
         } else {
             Scaffold(
+                topBar = {
+                    if (showTopBar) {
+                        TopAppBar(
+                            title = { Text("BranchIT") },
+                            actions = {
+                                IconButton(onClick = { selectedScreen = MainScreen.Updates }) {
+                                    Text("🔔", fontSize = MaterialTheme.typography.titleLarge.fontSize)
+                                }
+                            }
+                        )
+                    }
+                },
                 bottomBar = {
                     NavigationBar {
-                        MainScreen.entries.forEach { screen ->
+                        navScreens.forEach { screen ->
                             NavigationBarItem(
                                 selected = selectedScreen == screen,
                                 onClick = { selectedScreen = screen },
@@ -74,7 +116,11 @@ fun App() {
                 }
             ) { innerPadding ->
                 Box(Modifier.padding(innerPadding).fillMaxSize()) {
-                    MainScreenContent(selectedScreen)
+                    if (showUpdates) {
+                        UpdatesScreen()
+                    } else {
+                        MainScreenContent(selectedScreen)
+                    }
                 }
             }
         }
@@ -85,9 +131,10 @@ fun App() {
 fun MainScreenContent(screen: MainScreen) {
     when (screen) {
         MainScreen.Home -> HomeScreen()
-        MainScreen.Connect -> ConnectScreen()
+        MainScreen.Connect -> SettingsScreen()
         MainScreen.Post -> PostScreen()
-        MainScreen.Updates -> UpdatesScreen()
+        MainScreen.Chat -> ChatScreen()
         MainScreen.Profile -> ProfileScreen()
+        else -> {}
     }
 }
