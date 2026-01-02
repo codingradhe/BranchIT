@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // usernames lookup collection: document id is normalized lowercase username
+    match /usernames/{usernameId} {
+      allow read: if true;
+
+      // create allowed only if authenticated and the request sets uid to the auth uid
+      // and the usernameId matches the canonical username value in the resource.
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && usernameId == request.resource.data.username
+        && usernameId.size() >= 3
+        && usernameId.size() <= 20
+        && usernameId.matches('^[a-z0-9._]+$')
+        && !exists(/databases/$(database)/documents/usernames/$(usernameId));
+
+      // only the owner can delete their username
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+
+      // disallow direct updates; require delete+create to change ownership via transaction
+      allow update: if false;
+    }
+
+    // users collection - user profile documents
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow update: if request.auth != null && request.auth.uid == uid
+        // allow updating other fields; for username ensure that the username doc points to this uid
+        && (request.resource.data.keys().hasOnly(['username', 'usernameUpdatedAt']) == false
+            || (request.resource.data.username == resource.data.username
+                || get(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid));
+
+      allow create: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+

@@ -1,0 +1,64 @@
+# Kotlin Multiplatform
+/build/
+/.gradle/
+/.idea/
+/out/
+/bin/
+/*.iml
+/*.klib
+
+# Android
+/local.properties
+*.keystore
+*.jks
+*.apk
+*.ap_
+*.dex
+*.class
+*.log
+google-services.json
+firebase.json
+appcenter-config.json
+crashlytics.properties
+*.lock
+*.tmp
+*.bak
+*.apks
+*.aab
+*.so
+*.o
+*.obj
+*.hprof
+*.hprof.old
+
+# Desktop
+*.exe
+*.dll
+*.dmg
+secrets.json
+secrets.yaml
+config.json
+config.yaml
+
+# Secrets
+secrets.properties
+*.key
+*.pem
+*.crt
+*.p12
+*.p8
+*.der
+*.csr
+
+# General
+*.swp
+*.swo
+*.orig
+*.rej
+*.trace
+*.pid
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
